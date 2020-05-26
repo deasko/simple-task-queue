@@ -52,7 +52,7 @@ def task(portal_message):
     logging.debug(f"{log_prefix} Requesting... {message}")
     
     delay(random.uniform(1, 30))  # Simulando el tiempo de ejecucion del request
-    task_success = random.choice([true, false])  # TODO: Ver como tratar las tareas que fallan (task_success = False). Posiblemente reencolarlas(?)
+    task_success = random.choice([True, False])  # TODO: Ver como tratar las tareas que fallan (task_success = False). Posiblemente reencolarlas(?)
 
     logging.debug(f"{log_prefix} Sucess: {task_success} for {message}")
     portals_queue[portal]['threads'].pop()  # Libero el slot
@@ -75,17 +75,21 @@ class ConsumerThread(threading.Thread):
         executor = concurrent.futures.ThreadPoolExecutor(max_workers = self.max_concurrency)
         while True:
             threads_qty = len(portals_queue[self.portal]['threads'])
-            logging.debug(f"{log_prefix} Threads: {threads_qty} | Queue Size: {portals_queue[self.portal]['queue'].qsize()}")
+            logging.debug(f"{log_prefix} Running threads: {threads_qty} | Queue Size: {portals_queue[self.portal]['queue'].qsize()}")
             queue_is_empty = portals_queue[self.portal]['queue'].empty()
 
-            if not queue_is_empty and threads_qty < self.max_concurrency:
-                item = portals_queue[self.portal]['queue'].get()
-                portals_queue[self.portal]['threads'].append(item)
-                executor.map(task, [(self.portal, item)])
-            elif not queue_is_empty:
-                logging.debug(f"{log_prefix} Esperando que se desocupen slots... Usados: {threads_qty}/{self.max_concurrency}")
+            if not queue_is_empty:
+                if threads_qty < self.max_concurrency:
+                    item = portals_queue[self.portal]['queue'].get()
+                    portals_queue[self.portal]['threads'].append(item)
+                    executor.map(task, [(self.portal, item)])
+                else:                    
+                    logging.debug(f"{log_prefix} Esperando que se desocupen slots... Usados: {threads_qty}/{self.max_concurrency}")
             else:
-                logging.debug(f"{log_prefix} Hay slots disponibles... Esperando por más trabajo :)")
+                if threads_qty < self.max_concurrency:
+                    logging.debug(f"{log_prefix} Esperando por más trabajo :)")
+                else:
+                    logging.debug(f"{log_prefix} Cola vacía, capacidad a tope")
             
             delay(1)
 
