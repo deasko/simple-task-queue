@@ -81,12 +81,11 @@ class ConsumerThread(threading.Thread):
             if not queue_is_empty and threads_qty < self.max_concurrency:
                 item = portals_queue[self.portal]['queue'].get()
                 portals_queue[self.portal]['threads'].append(item)
-                logging.debug(f"{log_prefix} Se obtuvo el trabajo: {item}")
                 executor.map(task, [(self.portal, item)])
-            elif not portals_queue[self.portal]['queue'].empty():
+            elif not queue_is_empty:
                 logging.debug(f"{log_prefix} Esperando que se desocupen slots... Usados: {threads_qty}/{self.max_concurrency}")
             else:
-                logging.debug(f"{log_prefix} Hay Slots disponibles... Esperando por más trabajo :)")
+                logging.debug(f"{log_prefix} Hay slots disponibles... Esperando por más trabajo :)")
             
             delay(1)
 
@@ -96,7 +95,7 @@ if __name__ == '__main__':
     p.start()
     delay(2)
 
-    # Constuir los consumidores
+    # Constuir la granja de consumidores (1 consumer to 1 portal)
     for portal in portals_queue.keys():
         c = ConsumerThread(portal=portal, max_concurrency=portals_queue[portal]['max_concurrency'])
         c.start()
