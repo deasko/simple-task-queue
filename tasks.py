@@ -33,7 +33,7 @@ def get_word_counts(filename):
     # save file
     save_file(filename, json.dumps(dict(wordcount.most_common(20))))
     # simulate long-running task
-    time.sleep(2)
+    time.sleep(5)
     proc = os.getpid()
     print(f'Processed {filename} with process id: {proc}')
 
